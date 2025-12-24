@@ -12,6 +12,7 @@ import chromadb
 import google.generativeai as genai
 import os
 import time
+import gc
 
 # Import config with fallback
 try:
@@ -390,6 +391,9 @@ def handle_query(query_text):
                     "sources": sources,
                     "buildings": buildings_found
                 })
+                
+                # Force Garbage Collection
+                gc.collect()
 
 # Sidebar
 with st.sidebar:
@@ -482,6 +486,20 @@ with st.sidebar:
     if st.button("ℹ️ 系統資訊", use_container_width=True):
         system_info_dialog()
 
+    st.divider()
+    
+    # 5. Optimization Settings
+    st.header("🚀 效能優化")
+    if st.button("🗑️ 清除對話紀錄", use_container_width=True):
+        st.session_state.messages = []
+        st.experimental_rerun()
+        
+    show_history_maps = st.toggle(
+        "顯示歷史地圖", 
+        value=False, 
+        help="開啟後會顯示歷史訊息中的互動地圖（較吃資源）。關閉可避免應用程式卡頓。"
+    )
+
 # Handle Sidebar Button Clicks (Main Area Output)
 if "pending_query" in st.session_state and st.session_state.pending_query:
     handle_query(st.session_state.pending_query)
@@ -498,14 +516,19 @@ for idx, message in enumerate(st.session_state.messages):
         
         # Restore Map from History
         if "buildings" in message and message["buildings"]:
-            try:
-                map_service = get_map_service_cached()
-                historical_map = map_service.create_map(message["buildings"], center_on_first=True)
-                if historical_map:
-                    st.caption(f"📍 相關位置: {', '.join(message['buildings'])}")
-                    st_folium(historical_map, width=700, height=400, key=f"history_map_{idx}")
-            except Exception as e:
-                st.error(f"無法載入地圖: {e}")
+            st.caption(f"📍 相關位置: {', '.join(message['buildings'])}")
+            
+            # Only render map if toggle is ON
+            if show_history_maps:
+                try:
+                    map_service = get_map_service_cached()
+                    historical_map = map_service.create_map(message["buildings"], center_on_first=True)
+                    if historical_map:
+                        st_folium(historical_map, width=700, height=400, key=f"history_map_{idx}")
+                except Exception as e:
+                    st.error(f"無法載入地圖: {e}")
+            else:
+                 st.caption("(已隱藏地圖以節省資源，請至側邊欄開啟「顯示歷史地圖」)")
 
         # Show specific sources if available
         if "sources" in message:
