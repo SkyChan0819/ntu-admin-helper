@@ -30,7 +30,7 @@ venv/
 .idea/
 
 # Project Specific
-chroma_db/
+# chroma_db/  <-- Committing database for Streamlit Cloud deployment (Size < 100MB)
 # data/  <-- Uncomment if you don't want to upload raw data
 debug_*.txt
 *.log
