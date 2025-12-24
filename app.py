@@ -492,7 +492,7 @@ with st.sidebar:
     st.header("🚀 效能優化")
     if st.button("🗑️ 清除對話紀錄", use_container_width=True):
         st.session_state.messages = []
-        st.experimental_rerun()
+        st.rerun()
         
     show_history_maps = st.toggle(
         "顯示歷史地圖", 
