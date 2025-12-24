@@ -1,4 +1,13 @@
 import streamlit as st
+
+# Fix for Streamlit Cloud (ChromaDB requires SQLite > 3.35)
+try:
+    __import__('pysqlite3')
+    import sys
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+    pass
+
 import chromadb
 import google.generativeai as genai
 import os
