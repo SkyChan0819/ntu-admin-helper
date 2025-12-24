@@ -365,6 +365,12 @@ def handle_query(query_text):
     """
     Handle user query: display message, retrieve context, generate answer, and update history.
     """
+    # Use session state for context variables (safe access before sidebar render)
+    college_opt = st.session_state.get("college_opt", "其他學院 (一般)")
+    degree_opt = st.session_state.get("degree_opt", "學士班")
+    model_name = st.session_state.get("model_name", GEMINI_MODEL)
+    api_key_val = st.session_state.get("user_api_key", "")
+
     # 1. Display User Message
     with st.chat_message("user"):
         st.markdown(query_text)
@@ -377,21 +383,18 @@ def handle_query(query_text):
             if engine:
                 # Construct Context-Aware Query
                 context_suffix = ""
-                if college_option == "醫學院/公共衛生學院":
+                if college_opt == "醫學院/公共衛生學院":
                     context_suffix += " (醫學院/公衛學院規定)"
                 
-                context_suffix += f" ({degree_option})"
+                context_suffix += f" ({degree_opt})"
                 
                 # Construct identity string for LLM
-                user_identity_str = f"- 學院：{college_option}\n- 學制：{degree_option}"
-                
-                # Rewritten prompt for retrieval (includes context)
-                # search_query = f"{query_text} {context_suffix}" # Unused variable
+                user_identity_str = f"- 學院：{college_opt}\n- 學制：{degree_opt}"
                 
                 # 1. Rewrite with context (last 3 turns)
                 rewritten_prompt = rewrite_query_with_context(
-                    user_api_key,
-                    user_model_name,
+                    api_key_val,
+                    model_name,
                     st.session_state.messages,
                     query_text
                 )
@@ -408,12 +411,12 @@ def handle_query(query_text):
                 print("DEBUG: Retrieval complete. Results found:", len(results.get('documents', [[]])[0]))
                 
                 # 3. Generate
-                if user_api_key:
-                    print(f"DEBUG: Generating response with model {user_model_name}...")
+                if api_key_val:
+                    print(f"DEBUG: Generating response with model {model_name}...")
                     # Pass identity context
                     answer, sources = generate_response(
-                        user_api_key, 
-                        user_model_name, 
+                        api_key_val, 
+                        model_name, 
                         query_text, 
                         results,
                         user_identity=user_identity_str
@@ -465,6 +468,81 @@ def handle_query(query_text):
                     "sources": sources,
                     "buildings": buildings_found
                 })
+
+# Sidebar
+with st.sidebar:
+    # 1. API Key (Popout Dialog)
+    st.header("🔑 API 設定")
+    
+    if st.button("設定 Gemini API Key", use_container_width=True, icon="⚙️"):
+        api_key_dialog()
+            
+    if st.session_state.user_api_key:
+        st.markdown(
+            """
+            <div style='background-color: #d1e7dd; color: #0f5132; padding: 0.75rem 1rem; border-radius: 0.375rem; text-align: center; margin-bottom: 1rem; font-weight: bold;'>
+                ✅ API Key 已啟用 ✅
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            """
+            <div style='background-color: #f8d7da; color: #842029; padding: 0.75rem 1rem; border-radius: 0.375rem; text-align: center; margin-bottom: 1rem; font-weight: bold;'>
+                ❌ API Key 未設定 ❌
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # Update global variable for downstream use
+    user_api_key = st.session_state.user_api_key
+
+    st.divider()
+
+    # 2. Common Questions (Moved to Top)
+    st.header("💡 常見問題快選")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("😭好想停修"):
+            handle_query("如何辦理停修課程？")
+        if st.button("💰學生保險怎麼請"):
+            handle_query("如何申請學生團體保險理賠？")
+    with col2:
+        if st.button("📄我要印成績單"):
+            handle_query("如何申請中文成績單？")
+        if st.button("📖圖書館到幾點"):
+            handle_query("總圖書館開放時間為何？")
+
+    st.divider()
+
+    # 3. Identity Settings
+    st.header("👤 身分設定")
+    college_option = st.selectbox(
+        "學院別",
+        ["其他學院 (一般)", "醫學院/公共衛生學院"],
+        index=0,
+        help="醫學院與公衛學院之教務規定可能有所不同",
+        key="college_opt"
+    )
+    degree_option = st.selectbox(
+        "學制別",
+        ["學士班", "碩士班", "博士班"],
+        index=0,
+        key="degree_opt"
+    )
+
+    st.divider()
+
+    # 4. Model Selection
+    st.header("🤖 模型設定")
+    user_model_name = st.text_input(
+        "Gemini Model Name",
+        value=GEMINI_MODEL,
+        help="例如: gemini-1.5-flash, gemini-2.0-flash",
+        key="model_name"
+    )
 
 # Chat Interface
 if "messages" not in st.session_state:
