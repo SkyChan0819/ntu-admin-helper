@@ -300,7 +300,7 @@ def handle_query(query_text):
 
     # 2. Assistant Logic
     with st.chat_message("assistant"):
-        with st.spinner("正在智能檢索中...(使用 Two-Stage Retrieval)"):
+        with st.spinner("正在智慧檢索中...(使用 Two-Stage Retrieval)"):
             engine = get_rag_engine()
             if engine:
                 # Construct Context-Aware Query
@@ -428,14 +428,14 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("😭好想停修"):
-            handle_query("如何辦理停修課程？")
+            st.session_state.pending_query = "如何辦理停修課程？"
         if st.button("💰學生保險怎麼請"):
-            handle_query("如何申請學生團體保險理賠？")
+            st.session_state.pending_query = "如何申請學生團體保險理賠？"
     with col2:
         if st.button("📄我要印成績單"):
-            handle_query("如何申請中文成績單？")
+            st.session_state.pending_query = "如何申請中文成績單？"
         if st.button("📖圖書館到幾點"):
-            handle_query("總圖書館開放時間為何？")
+            st.session_state.pending_query = "總圖書館開放時間為何？"
 
     st.divider()
 
@@ -481,6 +481,11 @@ with st.sidebar:
     st.divider()
     if st.button("ℹ️ 系統資訊", use_container_width=True):
         system_info_dialog()
+
+# Handle Sidebar Button Clicks (Main Area Output)
+if "pending_query" in st.session_state and st.session_state.pending_query:
+    handle_query(st.session_state.pending_query)
+    st.session_state.pending_query = None  # Reset
 
 # Chat Interface
 if "messages" not in st.session_state:
