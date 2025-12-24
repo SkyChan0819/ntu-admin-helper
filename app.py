@@ -11,6 +11,7 @@ except ImportError:
 import chromadb
 import google.generativeai as genai
 import os
+import time
 
 # Import config with fallback
 try:
@@ -464,6 +465,22 @@ with st.sidebar:
         help="例如: gemini-1.5-flash, gemini-2.0-flash",
         key="model_name"
     )
+
+    if st.button("列出可用模型"):
+        if not user_api_key:
+            st.error("請先輸入 API Key")
+        else:
+            try:
+                genai.configure(api_key=user_api_key)
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                st.success(f"找到 {len(models)} 個可用模型:")
+                st.write(models)
+            except Exception as e:
+                st.error(f"查詢失敗: {e}")
+
+    st.divider()
+    if st.button("ℹ️ 系統資訊", use_container_width=True):
+        system_info_dialog()
 
 # Chat Interface
 if "messages" not in st.session_state:
