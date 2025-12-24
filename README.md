@@ -1,4 +1,4 @@
-# 🎓 臺大校園行政小幫手【NTU Admin Helper】
+# 🎓 臺大校園行政小幫手【NTU Admin Helper】 v1.1
 
 **NTU Admin Helper** 是一個專為台灣大學師生設計的 AI 智能助手，基於 RAG (Retrieval-Augmented Generation) 技術，能夠精準回答關於 **教務處 (ACA)、學務處 (OSA)、圖書館 (LIB) 及總務處 (OGA)** 的各類行政流程與規章問題。
 
